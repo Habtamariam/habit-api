@@ -6,6 +6,7 @@ import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
 // Imports the root service.
 import { AppService } from './app.service.js';
+import { HabitsModule } from './habits/habits.module.js';
 
 // Creates telemetry components for the application.
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
@@ -21,6 +22,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appSecret: 'YOUR_APP_SECRET',
       serviceId: 'habit-api',
     }),
+    HabitsModule,
   ],
   // Registers classes that handle HTTP requests.
   controllers: [AppController],
