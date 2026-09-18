@@ -1,0 +1,27 @@
+# Defines services used by local development.
+services:
+  # Runs the PostgreSQL database.
+  postgres:
+    # Uses PostgreSQL 16 on Alpine Linux.
+    image: postgres:16-alpine
+    # Creates the local database and user.
+    environment:
+      # Sets the database username.
+      POSTGRES_USER: habitapi
+      # Sets the database password.
+      POSTGRES_PASSWORD: habitapi
+      # Sets the database name.
+      POSTGRES_DB: habitdb
+    # Publishes PostgreSQL to the host machine.
+    ports:
+      # Maps host port 5434 to container port 5432.
+      - "5434:5432"
+
+  # Runs the Redis cache.
+  redis:
+    # Uses Redis 7 on Alpine Linux.
+    image: redis:7-alpine
+    # Publishes Redis to the host machine.
+    ports:
+      # Maps host port 6381 to container port 6379.
+      - "6381:6379"
