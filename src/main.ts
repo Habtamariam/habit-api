@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 // Imports the root module and telemetry instrumentation.
 import { AppModule, ObserveInstrument } from './app.module.js';
+// Imports the global exception filter.
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 
 // Creates and starts the HTTP application.
 async function bootstrap() {
@@ -18,6 +20,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  // Logs unhandled errors and returns consistent JSON responses.
+  app.useGlobalFilters(new AllExceptionsFilter());
   // Listens on the configured port or defaults to 3000.
   await app.listen(process.env.PORT ?? 3000);
 }

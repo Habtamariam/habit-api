@@ -1,76 +1,78 @@
-// Imports Nest's service and 404 exception decorators.
-import { Injectable, NotFoundException } from '@nestjs/common';
+// Imports Nest's injection, service, and 404 exception decorators.
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { and, eq } from 'drizzle-orm';
+import { DRIZZLE } from '../db/db.module.js';
+import * as schema from '../db/schema.js';
 import { CreateHabitDto } from './dto/create-habit.dto.js';
 import { UpdateHabitDto } from './dto/update-habit.dto.js';
-
-// Represents the data returned for a habit.
-type Habit = CreateHabitDto & {
-  id: number;
-  active: boolean;
-};
 
 // Makes this class available through Nest dependency injection.
 @Injectable()
 export class HabitsService {
-  // Stores habits temporarily in application memory.
-  private habits: Habit[] = [];
+  // Receives the Drizzle connection through its custom token.
+  constructor(
+    @Inject(DRIZZLE) private readonly db: NodePgDatabase<typeof schema>,
+  ) {}
 
-  // Provides the next unique habit ID.
-  private nextId = 1;
+  // Inserts a new habit for the specified user.
+  async create(userId: number, createHabitDto: CreateHabitDto) {
+    const [habit] = await this.db
+      .insert(schema.habits)
+      .values({ userId, ...createHabitDto })
+      .returning();
 
-  // Creates and stores a new active habit.
-  create(createHabitDto: CreateHabitDto) {
-    // Combines generated fields with the request data.
-    const habit: Habit = {
-      id: this.nextId++,
-      active: true,
-      ...createHabitDto,
-    };
-
-    // Adds the new habit to memory.
-    this.habits.push(habit);
-
-    // Returns the created habit.
     return habit;
   }
 
-  // Returns every stored habit.
-  findAll() {
-    return this.habits;
+  // Returns all habits belonging to the specified user.
+  findAll(userId: number) {
+    return this.db
+      .select()
+      .from(schema.habits)
+      .where(eq(schema.habits.userId, userId));
   }
 
-  // Finds one habit or returns an HTTP 404 error.
-  findOne(id: number) {
-    // Searches for a habit with the requested ID.
-    const habit = this.habits.find((item) => item.id === id);
+  // Finds one habit belonging to the specified user.
+  async findOne(userId: number, id: number) {
+    const [habit] = await this.db
+      .select()
+      .from(schema.habits)
+      .where(and(eq(schema.habits.id, id), eq(schema.habits.userId, userId)));
 
-    // Converts a missing habit into a 404 response.
     if (!habit) {
       throw new NotFoundException('Habit not found');
     }
 
-    // Returns the matching habit.
     return habit;
   }
 
-  // Updates selected fields on an existing habit.
-  update(id: number, updateHabitDto: UpdateHabitDto) {
-    // Reuses the lookup and 404 behavior.
-    const habit = this.findOne(id);
+  // Updates selected fields for a user's habit.
+  async update(userId: number, id: number, updateHabitDto: UpdateHabitDto) {
+    const [habit] = await this.db
+      .update(schema.habits)
+      .set(updateHabitDto)
+      .where(and(eq(schema.habits.id, id), eq(schema.habits.userId, userId)))
+      .returning();
 
-    // Copies only supplied fields onto the habit.
-    Object.assign(habit, updateHabitDto);
+    if (!habit) {
+      throw new NotFoundException('Habit not found');
+    }
 
-    // Returns the updated habit.
     return habit;
   }
 
-  // Removes a habit from memory.
-  remove(id: number) {
-    // Keeps every habit except the requested one.
-    this.habits = this.habits.filter((habit) => habit.id !== id);
+  // Removes a user's habit from PostgreSQL.
+  async remove(userId: number, id: number) {
+    const deleted = await this.db
+      .delete(schema.habits)
+      .where(and(eq(schema.habits.id, id), eq(schema.habits.userId, userId)))
+      .returning({ id: schema.habits.id, userId: schema.habits.userId });
 
-    // Confirms the delete operation.
+    if (deleted.length === 0) {
+      throw new NotFoundException('Habit not found');
+    }
+
     return { deleted: true };
   }
 }

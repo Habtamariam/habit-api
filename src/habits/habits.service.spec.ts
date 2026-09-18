@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DRIZZLE } from '../db/db.module.js';
 import { HabitsService } from './habits.service.js';
 
 describe('HabitsService', () => {
@@ -6,7 +7,7 @@ describe('HabitsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [HabitsService],
+      providers: [HabitsService, { provide: DRIZZLE, useValue: {} }],
     }).compile();
 
     service = module.get<HabitsService>(HabitsService);

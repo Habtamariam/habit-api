@@ -7,6 +7,9 @@ import { AppController } from './app.controller.js';
 // Imports the root service.
 import { AppService } from './app.service.js';
 import { HabitsModule } from './habits/habits.module.js';
+// Imports environment configuration and the Drizzle database module.
+import { ConfigModule } from '@nestjs/config';
+import { DbModule } from './db/db.module.js';
 
 // Creates telemetry components for the application.
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
@@ -15,6 +18,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
 @Module({
   // Registers modules used by this module.
   imports: [
+    // Loads values from the .env file globally.
+    ConfigModule.forRoot({ isGlobal: true }),
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({
@@ -22,6 +27,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appSecret: 'YOUR_APP_SECRET',
       serviceId: 'habit-api',
     }),
+    // Registers the PostgreSQL connection through Drizzle.
+    DbModule,
     HabitsModule,
   ],
   // Registers classes that handle HTTP requests.
