@@ -1,0 +1,9 @@
+# habit-api/.gitignore and habit-web/.gitignore (same content for both)
+node_modules/
+dist/
+*.tsbuildinfo
+.next/
+.env
+.env.local
+*.log
+.DS_Store
