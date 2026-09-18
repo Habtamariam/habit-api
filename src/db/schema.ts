@@ -6,6 +6,7 @@ import {
   pgTable,
   serial,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
 
@@ -26,11 +27,21 @@ export const habits = pgTable('habits', {
 });
 
 // Stores one completion record for each habit and date.
-export const habitLogs = pgTable('habit_logs', {
-  // Creates an auto-incrementing log primary key.
-  id: serial('id').primaryKey(),
-  // Identifies the completed habit.
-  habitId: integer('habit_id').notNull(),
-  // Stores the calendar date of completion.
-  completedOn: date('completed_on').notNull(),
-});
+export const habitLogs = pgTable(
+  'habit_logs',
+  {
+    // Creates an auto-incrementing log primary key.
+    id: serial('id').primaryKey(),
+    // Identifies the completed habit.
+    habitId: integer('habit_id').notNull(),
+    // Stores the calendar date of completion.
+    completedOn: date('completed_on').notNull(),
+  },
+  (table) => [
+    // Allows only one completion record per habit and day.
+    uniqueIndex('habit_logs_habit_date_idx').on(
+      table.habitId,
+      table.completedOn,
+    ),
+  ],
+);

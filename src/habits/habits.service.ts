@@ -75,4 +75,69 @@ export class HabitsService {
 
     return { deleted: true };
   }
+
+  // Records today's completion for a user's habit once.
+  async checkIn(userId: number, habitId: number) {
+    // Confirms the habit belongs to the current user.
+    await this.findOne(userId, habitId);
+
+    // Creates a date-only value in YYYY-MM-DD format.
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Checks whether today's completion was already recorded.
+    const [existing] = await this.db
+      .select()
+      .from(schema.habitLogs)
+      .where(
+        and(
+          eq(schema.habitLogs.habitId, habitId),
+          eq(schema.habitLogs.completedOn, today),
+        ),
+      );
+
+    // Makes repeated check-in requests idempotent.
+    if (existing) {
+      return existing;
+    }
+
+    // Stores today's completion in PostgreSQL.
+    const [log] = await this.db
+      .insert(schema.habitLogs)
+      .values({ habitId, completedOn: today })
+      .returning();
+
+    return log;
+  }
+
+  // Counts consecutive completed days ending today.
+  async getStreak(userId: number, habitId: number) {
+    // Confirms the habit belongs to the current user.
+    await this.findOne(userId, habitId);
+
+    // Loads all completion dates for the habit.
+    const logs = await this.db
+      .select()
+      .from(schema.habitLogs)
+      .where(eq(schema.habitLogs.habitId, habitId));
+
+    // Uses a set for fast date lookups.
+    const completedDates = new Set(logs.map((log) => log.completedOn));
+
+    // Walks backward until the first missing day.
+    let streak = 0;
+    const cursor = new Date();
+
+    while (true) {
+      const dateString = cursor.toISOString().slice(0, 10);
+
+      if (!completedDates.has(dateString)) {
+        break;
+      }
+
+      streak++;
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+
+    return { streak };
+  }
 }

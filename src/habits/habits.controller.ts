@@ -42,4 +42,14 @@ export class HabitsController {
   remove(@Param('id') id: string) {
     return this.habitsService.remove(this.demoUserId, +id);
   }
+
+  @Post(':id/checkin')
+  checkIn(@Param('id') id: string) {
+    return this.habitsService.checkIn(this.demoUserId, +id);
+  }
+
+  @Get(':id/streak')
+  getStreak(@Param('id') id: string) {
+    return this.habitsService.getStreak(this.demoUserId, +id);
+  }
 }

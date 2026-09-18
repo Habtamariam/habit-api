@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "habit_logs_habit_date_idx" ON "habit_logs" USING btree ("habit_id","completed_on");
